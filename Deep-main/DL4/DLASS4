@@ -1,0 +1,89 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
+from keras.models import Sequential
+from keras.layers import LSTM, Dense, Dropout
+
+# Load the dataset
+data = pd.read_csv(r"GOOGL.csv")
+data.head()
+
+
+# Drop any missing values
+data = data.dropna()
+
+
+# Select only the 'Close' prices
+prices = data['Close'].values.reshape(-1, 1)
+
+
+# Normalize the data using Min-Max scaling
+scaler = MinMaxScaler(feature_range=(0, 1))
+prices_scaled = scaler.fit_transform(prices)
+
+
+# Define the sequence length (number of time steps)
+sequence_length = 60
+
+# Function to create sequences of data
+def create_sequences(data, sequence_length):
+    X, y = [], []
+    for i in range(len(data) - sequence_length):
+        X.append(data[i:(i + sequence_length)])
+        y.append(data[i + sequence_length])
+    return np.array(X), np.array(y)
+
+# Create sequences of data
+X, y = create_sequences(prices_scaled, sequence_length)
+
+
+# Split the data into training and testing sets
+split = int(0.8 * len(X))
+X_train, X_test, y_train, y_test = X[:split], X[split:], y[:split], y[split:]
+
+
+# Build the RNN model
+model = Sequential()
+model.add(LSTM(units=50, return_sequences=True, input_shape=(X_train.shape[1], 1)))
+model.add(Dropout(0.2))
+model.add(LSTM(units=50, return_sequences=True))
+model.add(Dropout(0.2))
+model.add(LSTM(units=50))
+model.add(Dropout(0.2))
+model.add(Dense(units=1))
+
+
+
+# Compile the model
+model.compile(optimizer='adam', loss='mean_squared_error')
+
+
+# Train the model
+model.fit(X_train, y_train, epochs=10, batch_size=32)
+
+
+
+# Evaluate the model
+loss = model.evaluate(X_test, y_test)
+print('Test Loss:', loss)
+
+
+# Make predictions
+predictions = model.predict(X_test)
+
+
+# Inverse transform the predictions and actual values
+predictions = scaler.inverse_transform(predictions)
+actual = scaler.inverse_transform(y_test)
+
+
+
+# Plot the predictions and actual values
+plt.plot(actual, color='blue', label='Actual Prices')
+plt.plot(predictions, color='red', label='Predicted Prices')
+plt.title('Google Stock Prices Prediction')
+plt.xlabel('Time')
+plt.ylabel('Price')
+plt.legend()
+plt.show()

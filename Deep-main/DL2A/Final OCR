@@ -1,0 +1,126 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+
+
+
+columns = ['letter'] + [f'feature_{i}' for i in range(16)]
+df = pd.read_csv(r"letter-recognition.data", names=columns)
+# Assuming 'your_data_path' is the actual path to your data file
+
+# Preprocess the data
+label_encoder = LabelEncoder()
+df['target'] = label_encoder.fit_transform(df['letter'])
+X = df.drop(['letter', 'target'], axis=1)
+y = df['target']
+
+# Split the dataset
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train.iloc[0]
+df.head()
+
+
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+
+
+
+model = Sequential()
+model.add(Dense(128, activation='relu', input_shape=(16,)))
+model.add(Dense(64, activation='relu'))
+model.add(Dense(26, activation='softmax'))  # 26 classes for letters
+
+# Compile the model
+model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+
+# Train the model
+model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_test, y_test))
+
+# Evaluate the model
+test_loss, test_accuracy = model.evaluate(X_test, y_test)
+print(f'Test Accuracy: {test_accuracy}')
+
+
+
+# Given data
+import numpy as np
+new_data = np.array([4, 7, 5, 5, 4, 6, 7, 3, 7, 11, 8, 9, 3, 8, 4, 8]).reshape(1, -1)
+
+# Use the model to make predictions
+predictions = model.predict(new_data)
+print(predictions)
+# Display the predictions
+predicted_class = np.argmax(predictions)
+print(f'The predicted class is: {predicted_class}')
+
+
+
+
+
+class_mapping = {
+    0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E', 5: 'F', 6: 'G', 7: 'H', 8: 'I', 9: 'J',
+    10: 'K', 11: 'L', 12: 'M', 13: 'N', 14: 'O', 15: 'P', 16: 'Q', 17: 'R', 18: 'S', 19: 'T',
+    20: 'U', 21: 'V', 22: 'W', 23: 'X', 24: 'Y', 25: 'Z'
+}
+
+# Display the predicted class using the mapping
+predicted_letter = class_mapping[predicted_class]
+print(f'The predicted class is: {predicted_class}, which corresponds to the letter: {predicted_letter}')
+
+
+
+sudo apt-get install python3-tk
+
+
+
+import tkinter as tk
+from tkinter import messagebox
+import numpy as np
+import time
+
+# Function to predict letter
+def predict_letter():
+    # Retrieve input data from entry widget
+    input_data = entry.get()
+    # Convert input data to numpy array
+    try:
+        new_data = np.array(list(map(int, input_data.split()))).reshape(1, -1)
+        # Use the model to make predictions
+        start_time = time.time() # Start timing
+        predictions = model.predict(new_data)
+        end_time = time.time() # End timing
+        # Calculate time taken
+        time_taken = end_time - start_time
+        # Display the predictions
+        predicted_class = np.argmax(predictions)
+        predicted_letter = class_mapping.get(predicted_class, 'Unknown')
+        # Display predicted Letter with time taken
+        messagebox.showinfo("Prediction Result", f"The predicted letter is: {predicted_letter}\nTime taken to predict: {time_taken:.6f} seconds")
+    except ValueError:
+        messagebox.showerror("Error", "Invalid input data. Please enter space-separated integers.")
+
+# Load your model and class mapping before creating the Tkinter window
+# Make sure 'model' and 'class_mapping' are defined and loaded before this point.
+
+# Create Tkinter window
+window = tk.Tk()
+window.title("Letter Prediction")
+
+# Create a Label
+label = tk.Label(window, text="Enter new data :")
+label.pack(pady=10)
+
+# Create an entry widget
+entry = tk.Entry(window, width=50)
+entry.pack()
+
+# Create a button
+button = tk.Button(window, text="Predict Letter", command=predict_letter)
+button.pack(pady=10)
+
+# Run the Tkinter event Loop
+window.mainloop()
+
